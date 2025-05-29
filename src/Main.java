@@ -1,4 +1,7 @@
+import EnumProject.DayOfTheWeek;
 import section21.exo325.Thread1;
+
+import java.util.Random;
 
 
 //class OddThread extends Thread{
@@ -37,28 +40,22 @@ class EvenRunnable implements Runnable{
 public class Main {
     public static void main(String[] args) {
 
-       // OddThread oddThread=new OddThread();
-        Thread oddThread=new Thread(()->{
-            for(int i =1;i<=10;i+=2){
-                System.out.println("OddThread: "+i);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    System.out.println("OddThread interrupted!");
-                       break;
-                }
-            }
-        });
-        Thread evenThread=new Thread(new EvenRunnable());
-        oddThread.start();
-        evenThread.start();
+        DayOfTheWeek dayOfTheWeek = DayOfTheWeek.FRI;
+        System.out.println(dayOfTheWeek);
+        System.out.printf("The name of the date is %s and the order is %d%n",dayOfTheWeek.name(),dayOfTheWeek.ordinal());
 
-        try{
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        for(int i=0;i<10;i++){
+            dayOfTheWeek=getRandomDay();
+            System.out.printf("The name of the date is %s and the order is %d%n",dayOfTheWeek.name(),dayOfTheWeek.ordinal());
+
         }
-        oddThread.interrupt();
 
+    }
+
+    public static  DayOfTheWeek getRandomDay(){
+        int randomInteger=new Random().nextInt(7);
+        var allDays=DayOfTheWeek.values();
+
+        return allDays[randomInteger];
     }
 }
