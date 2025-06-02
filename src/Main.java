@@ -1,46 +1,63 @@
 import com.mysql.cj.jdbc.MysqlDataSource;
 
-import javax.swing.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.sql.*;
+import java.util.Properties;
 
 public class Main {
-
     private final static  String CONN_STRING="jdbc:mysql://localhost:3306/music";
     public static void main(String[] args) {
-        String username= JOptionPane.showInputDialog(null,"Enter DB Username");
-        JPasswordField pf = new JPasswordField();
-        int okCxl=JOptionPane.showConfirmDialog(null,pf,"Enter DB Password",JOptionPane.OK_CANCEL_OPTION);
-        final char[] password=(okCxl==JOptionPane.OK_OPTION)?pf.getPassword():null;
-        //Establishing the connection with DriverManager
-//        try {
-//            assert password != null;
-//            try(Connection connection = DriverManager.getConnection(CONN_STRING,username,String.valueOf(password))){
-//                System.out.println("Success !! Connection made to the music database");
-//                Arrays.fill(password,' ');//Here I have reset password by filling it with white space
-//            }
-//        } catch (SQLException e){
-//            throw new RuntimeException(e);
-//        }
 
-        //Establishing the connection using DataSource newer than Drivemanager
-        var dataSource=new MysqlDataSource();
-     //   dataSource.setURL(CONN_STRING);
-                //or
-        dataSource.setServerName("localhost");
-        dataSource.setPort(3306);
-        dataSource.setDatabaseName("music");
-        try {
-            assert password != null;
-            try(Connection connection =dataSource.getConnection(username,String.valueOf(password))){
-                System.out.println("Success !! Connection made to the music database");
-                Arrays.fill(password,' ');//Here I have reset password by filling it with white space
-            }
-        } catch (SQLException e){
+        Properties props = new Properties();
+        try{
+            props.load(Files.newInputStream(Path.of("music.properties"), StandardOpenOption.READ));
+        }catch (IOException e){
             throw new RuntimeException(e);
         }
+
+        String albumName="Tapestry";
+        String query="SELECT * FROM music.albumview WHERE album_name='%s'".formatted(albumName);
+
+        var dataSource = new MysqlDataSource();
+        dataSource.setServerName(props.getProperty("serverName"));
+        dataSource.setPort(Integer.parseInt(props.getProperty("port")));
+        dataSource.setDatabaseName(props.getProperty("databaseName"));
+
+        try(
+                var connection= dataSource.getConnection(
+                        props.getProperty("user"),
+                        System.getenv("MYSQL_PASS"));
+                Statement statement = connection.createStatement()
+        ){
+            ResultSet resultSet= statement.executeQuery(query);
+            var meta=resultSet.getMetaData();
+            for(int i=1;i<= meta.getColumnCount();i++){
+                System.out.printf("%d %s %s %n",i,meta.getColumnName(i),meta.getColumnTypeName(i));
+            }
+            System.out.printf("===================== %n");
+            while (resultSet.next()){
+                System.out.printf("%d %s %s %n",resultSet.getInt("track_number"),resultSet.getString("artist_name"),resultSet.getString("song_title"));
+            }
+        }catch(SQLException e){
+            throw  new RuntimeException(e);
+        }
+
+        //With DriverManager
+//        try(
+//               Connection connection=DriverManager.getConnection(CONN_STRING,props.getProperty("user"),System.getenv("MYSQL_PASS"));
+//               Statement statement= connection.createStatement()
+//        ){
+//            ResultSet resultSet= statement.executeQuery(query);
+//
+//            while (resultSet.next()){
+//                System.out.printf("%d %s %n",resultSet.getInt(1),resultSet.getString("artist_name"));
+//            }
+//        }catch(SQLException e){
+//            throw  new RuntimeException(e);
+//        }
 
     }
 
