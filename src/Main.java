@@ -9,74 +9,77 @@ import java.util.Properties;
 import java.util.Scanner;
 
 public class Main {
-    private final static  String CONN_STRING="jdbc:mysql://localhost:3306/music";
+    private static final int MYSQL_DB_NOT_FOUND = 1049;
+    private static  String USE_SCHEMA="Use storefront";//This is a DDL statement. It sets the default database for the session.The SQL syntax USE storefront is a database command that switches your current database context to a database named "storefront"
     public static void main(String[] args) {
 
-        Properties props = new Properties();
-        try{
-            props.load(Files.newInputStream(Path.of("music.properties"), StandardOpenOption.READ));
-        }catch (IOException e){
-            throw new RuntimeException(e);
-        }
-
-
         var dataSource = new MysqlDataSource();
-        dataSource.setServerName(props.getProperty("serverName"));
-        dataSource.setPort(Integer.parseInt(props.getProperty("port")));
-        dataSource.setDatabaseName(props.getProperty("databaseName"));
-        try {
-            dataSource.setMaxRows(20);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        Scanner scanner =new Scanner(System.in);
-       // System.out.println("Entrez l'id d'un artist :");
-      //  String albumName="Tapestry";
-      //  String albumName=scanner.nextLine();
-     //   String artist_id= scanner.nextLine();
-        String query="SELECT * FROM music.artists ";
-
-        try(
-                var connection= dataSource.getConnection(
-                        props.getProperty("user"),
-                        System.getenv("MYSQL_PASS"));
-                Statement statement = connection.createStatement()
-        ){
-            ResultSet resultSet= statement.executeQuery(query);
-            var meta=resultSet.getMetaData();
-            System.out.println("=====================");
-            for(int i=1;i<= meta.getColumnCount();i++){
-                System.out.printf("%-15s",meta.getColumnName(i).toUpperCase());
-            }
-            System.out.println();
-            while (resultSet.next()){
-                for(int i=1;i<= meta.getColumnCount();i++){
-                    System.out.printf("%-15s",resultSet.getString(i));
-                }
-                System.out.println();
-
+        dataSource.setServerName("localhost");
+        dataSource.setPort(3306);
+        dataSource.setUser(System.getenv("MYSQLUSER"));
+        dataSource.setPassword(System.getenv("MYSQLPASS"));
+        try(Connection conn=dataSource.getConnection()){
+            DatabaseMetaData metaData=conn.getMetaData();
+            System.out.println(metaData.getSQLStateType());
+            if(!checkSchema(conn)){
+                System.out.println("storefont schema does not exist");
+                setUpSchema(conn);
             }
         }catch(SQLException e){
-            throw  new RuntimeException(e);
+            throw new RuntimeException(e);
         }
-
-        //With DriverManager
-//        try(
-//               Connection connection=DriverManager.getConnection(CONN_STRING,props.getProperty("user"),System.getenv("MYSQL_PASS"));
-//               Statement statement= connection.createStatement()
-//        ){
-//            ResultSet resultSet= statement.executeQuery(query);
-//
-//            while (resultSet.next()){
-//                System.out.printf("%d %s %n",resultSet.getInt(1),resultSet.getString("artist_name"));
-//            }
-//        }catch(SQLException e){
-//            throw  new RuntimeException(e);
-//        }
 
     }
 
+    private static boolean checkSchema(Connection conn)throws SQLException{
+        try(Statement statement= conn.createStatement()){
+            statement.execute(USE_SCHEMA);
+        } catch (SQLException e) {
+            System.err.println("SQLState: "+e.getSQLState());
+            System.err.println("Error Code: "+e.getErrorCode());
+            System.err.println("Message : "+e.getMessage());
+            if(conn.getMetaData().getDatabaseProductName().equals("MySQL")&&e.getErrorCode()==MYSQL_DB_NOT_FOUND){
+                return false;
+            }else throw e;
+        }
+        return true;
+    }
+
+    private static void setUpSchema(Connection conn)throws  SQLException{
+        String createSchema="CREATE SCHEMA storefront"; //This is to create database or schema named storefront
+        String createOrder= """
+                CREATE TABLE storefront.order(
+                order_id int NOT NULL AUTO_INCREMENT,
+                order_date DATETIME NOT NULL,
+                PRIMARY KEY (order_id)
+                )
+                """;
+        String createOrderDetails= """
+                CREATE TABLE storefront.order_details(
+                order_detail_id int NOT NULL AUTO_INCREMENT,
+                item_description text ,
+                order_id int DEFAULT NULL,
+                PRIMARY KEY (order_detail_id),
+                KEY FK_ORDERID (order_id),
+                CONSTRAINT FK_ORDERID FOREIGN KEY (order_id)
+                REFERENCES storefront.order (order_id) ON DELETE CASCADE
+                )
+                """;
+
+        try(Statement statement=conn.createStatement()){
+            System.out.println("Creating storefront DataBase");
+            statement.execute(createSchema);
+            if(checkSchema(conn)){
+                statement.execute(createOrder);
+                System.out.println("Successfully Created Order");
+                statement.execute(createOrderDetails);
+                System.out.println("Successfully Created Order Details");
+            }
+        }catch (SQLException e){
+            throw new SQLException(e);
+        }
+
+    }
 
 }
 

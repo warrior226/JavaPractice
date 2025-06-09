@@ -4,6 +4,7 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.Arrays;
 
 public class MusicDML {
 
@@ -21,14 +22,17 @@ public class MusicDML {
 //            System.out.println("found= "+found);
             String tableName="music.artists";
             String columnName="artist_name";
-            String columnValue="OUEDRAOGO Safi";
+            String columnValue="Nikema Steeve";
             if(!executeSelect(statement,tableName,columnName,columnValue)){
                 System.out.println("Maybe we should add this record");
               //  insertRecord(statement,tableName,new String[]{columnName},new String[]{columnValue});
                 insertArtistAlbum(statement,columnValue,columnName);
             }else{
-               // deleteRecord(statement,tableName,columnName,columnValue);
-                updateRecord(statement,tableName,columnName,columnValue,columnName,columnValue.toUpperCase());
+                try{
+                    deleteArtistAlbum(connection,statement,columnValue,columnValue);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
         }catch (SQLException e){
@@ -137,5 +141,37 @@ public class MusicDML {
             statement.execute(songQuery);
             System.out.println(songQuery);
         }
+    }
+
+    private static void deleteArtistAlbum(Connection conn,Statement statement,String artistName,String albumName)throws SQLException{
+
+        try {
+            System.out.println("AUTOCOMMIT = "+ conn.getAutoCommit());
+            conn.setAutoCommit(false); //We do it in orders to execute transactions
+            String deleteSongs= """
+                DELETE FROM music.songs WHERE album_id=(SELECT ALBUM_ID from music.albums WHERE album_name='%s')
+                """.formatted(albumName);
+            //int deletedSongs=statement.executeUpdate(deleteSongs);
+            //System.out.printf("Deleted %d rows from music.songs%n",deletedSongs);
+            String deleteAlbums="DELETE FROM music.albums WHERE album_name='%s'".formatted(albumName);
+            //int deletedAlbums=statement.executeUpdate(deleteAlbums);
+            //System.out.printf("Deleted %d rows from music.albums%n",deletedAlbums);
+            String deleteArtist="DELETE FROM music.artists WHERE artist_name='%s'".formatted(artistName);
+            //int deletedArtistes=statement.executeUpdate(deleteArtist);
+            //System.out.printf("Deleted %d rows from music.artists%n,de",deletedArtistes);
+            statement.addBatch(deleteSongs);
+            statement.addBatch(deleteAlbums);
+            statement.addBatch(deleteArtist);
+            int [] results= statement.executeBatch();
+            System.out.println(Arrays.toString(results));
+            conn.commit();
+
+        }catch (SQLException e){
+            e.printStackTrace();
+            conn.rollback();
+        }
+
+        conn.setAutoCommit(false);
+
     }
 }
