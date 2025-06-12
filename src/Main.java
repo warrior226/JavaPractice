@@ -5,8 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.sql.*;
-import java.util.Properties;
-import java.util.Scanner;
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Date;
 
 public class Main {
     private static final int MYSQL_DB_NOT_FOUND = 1049;
@@ -25,6 +28,9 @@ public class Main {
                 System.out.println("storefont schema does not exist");
                 setUpSchema(conn);
             }
+//            int newOrder=insertOrder(conn,new String[]{"shoes","shirt","socks"});
+//            System.out.println("New Order = " + newOrder);
+            deleteOrder(conn,12);
         }catch(SQLException e){
             throw new RuntimeException(e);
         }
@@ -79,6 +85,70 @@ public class Main {
             throw new SQLException(e);
         }
 
+    }
+
+    private static int insertOrder(Connection conn,String[]items)throws SQLException{
+        int orderId=-1;
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String registeredDate=now.format(formatter);
+        try(Statement statement=conn.createStatement()){
+            conn.setAutoCommit(false);
+            //Insert in order table
+            String sql="INSERT INTO storefront.order (order_date) VALUES (%s)".formatted(statement.enquoteLiteral(registeredDate));
+            System.out.println(sql);
+            int inserts=statement.executeUpdate(sql,Statement.RETURN_GENERATED_KEYS);//Retourne le nombre de ligne qui ont été impactées
+
+
+            if(inserts==1){
+                var rs=statement.getGeneratedKeys();
+                if(rs.next()){
+                    orderId=rs.getInt(1);
+                }
+            }
+
+            int count=0;
+
+            for(var item:items){
+                String sql_register_detail="INSERT INTO storefront.order_details (order_id,item_description) VALUES (%d,%s)".formatted(orderId,statement.enquoteLiteral(item));
+                inserts=statement.executeUpdate(sql_register_detail);
+                count+=inserts;
+            }
+            //Commit if it all successful
+            if(count!=items.length){
+                orderId=-1;
+                System.out.println("Number of records inserted doesn't equal items received");
+                conn.rollback();
+            }else{
+                conn.commit();
+            }
+            conn.commit();
+            conn.setAutoCommit(true);
+            System.out.println("Transaction completed successfully");
+        } catch (SQLException e) {
+            conn.rollback();
+            System.out.println("Transaction rolled back : "+e.getMessage());
+            System.err.println("SQLState: "+e.getSQLState());
+            System.err.println("Error Code: "+e.getErrorCode());
+            System.err.println("Message : "+e.getMessage());
+        }
+
+        return orderId;
+    }
+
+    private static int deleteOrder(Connection conn,int orderId){
+        String sql="DELETE FROM storefront.order where order_id=%d";
+        String sql_query=sql.formatted(orderId);
+        int deletedRows=-1;
+        try(Statement statement=conn.createStatement()){
+            deletedRows=statement.executeUpdate(sql_query);
+            System.out.println(deletedRows+" has been deleted");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return deletedRows;
     }
 
 }
