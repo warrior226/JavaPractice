@@ -32,8 +32,8 @@ public class Artist {
         this.artistName = artistName;
     }
 
-    public Artist(int artistId) {
-        this.artistId = artistId;
+    public Artist(String artistName) {
+        this.artistName = artistName;
     }
 
     @Override
