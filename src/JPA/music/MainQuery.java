@@ -4,8 +4,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 
 import java.util.List;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MainQuery {
@@ -17,10 +22,21 @@ public class MainQuery {
         try(EntityManagerFactory emf= Persistence.createEntityManagerFactory("orm_persistence");
                 EntityManager em= emf.createEntityManager();){
             var transaction=em.getTransaction();
-
             transaction.begin();
             artists=getArtistsJPQL(em,"%Greatest Hits%");
             artists.forEach(System.out::println);
+
+            System.out.println("-----------------------------");
+            Stream<Artist> sartist=getArtistsBuilder(em,"");
+            var map=sartist.limit(10)
+                    .collect(Collectors.toMap(
+                            Artist::getArtistName,
+                            (a)->a.getAlbums().size(),
+                            Integer::sum,
+                            TreeMap::new
+                    ));
+
+            map.forEach((k,v)->System.out.println(k+":"+v));
 
 //            var names=getArtistNames(em,"%Stev%");
 //            names.map(a->new Artist(
@@ -52,6 +68,16 @@ public class MainQuery {
         var query =em.createQuery(jpql,Tuple.class);
         query.setParameter(1,matchedValue);
         return query.getResultStream();
+    }
+
+    private static Stream<Artist> getArtistsBuilder(EntityManager em , String matchedValue){
+        CriteriaBuilder builder= em.getCriteriaBuilder();
+        CriteriaQuery<Artist> criteriaQuery= builder.createQuery(Artist.class); //Create a CriteriaQuery that will return Artist entities when executed
+        Root<Artist> root=criteriaQuery.from(Artist.class);
+        criteriaQuery.select(root);
+        criteriaQuery.where(builder.like(root.get("artisName"),matchedValue));
+        criteriaQuery.orderBy(builder.asc(root.get("artistName")));
+        return  em.createQuery(criteriaQuery).getResultStream();
     }
 
 }

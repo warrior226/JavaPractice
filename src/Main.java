@@ -16,11 +16,11 @@ public class Main {
             var transaction=entityManager.getTransaction();
             transaction.begin();
          //   entityManager.persist(new Artist("Muddy Water"));
-            Artist artist =entityManager.find(Artist.class,202);
+            Artist artist =entityManager.find(Artist.class,201);
+            artist.removeDuplicates();
             System.out.println(artist);
-            //artist.removeDuplicates();
-            artist.addAlbum("The Best of Patrick RAYAISSE");
-            System.out.println(artist);
+         //   artist.addAlbum("The Best of Patrick RAYAISSE");
+            //System.out.println(artist);
             //List<Album> albums=entityManager.createQuery("SELECT a FROM Album a ",Album.class).getResultList();
            // System.out.println(albums);
 

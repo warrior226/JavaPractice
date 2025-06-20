@@ -61,6 +61,7 @@ public class Artist {
                 "artistId=" + artistId +
                 ", artistName='" + artistName + '\'' +
                 ", albums="+albums+
+
                 '}';
     }
 }
