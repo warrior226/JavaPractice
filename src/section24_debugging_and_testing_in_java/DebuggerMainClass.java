@@ -11,5 +11,7 @@ public class DebuggerMainClass {
             utils.addChar(sb,'a');
         }
         System.out.println(sb);
+        String str="abcdef";
+        String result= utils.upperAndPrefix(utils.addSuffix(str));
     }
 }
