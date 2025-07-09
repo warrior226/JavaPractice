@@ -25,7 +25,7 @@ public class SimpleClient {
                 output.println(requestString);
                 if(!requestString.equals("exit")){
                     responseString=input.readLine();
-                    System.out.println(requestString);
+                    System.out.println(responseString);
                 }
             }while ((!requestString.equals("exit")));
         }catch (IOException e) {
@@ -34,4 +34,5 @@ public class SimpleClient {
             System.out.println("System disconnected");
         }
     }
+
 }
