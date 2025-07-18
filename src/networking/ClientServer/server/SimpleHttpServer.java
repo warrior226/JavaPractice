@@ -22,6 +22,7 @@ public class SimpleHttpServer {
                 System.out.println("Body data: " + data);
                 Map<String,String> parameters = parseParameters(data);
                 System.out.println(parameters);
+                exchange.getRequestHeaders().entrySet().forEach(System.out::println);
                 if(requestMethod.equals("POST")){
                     visitorCounter++;
                 }
