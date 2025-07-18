@@ -1,6 +1,9 @@
 package HttpProject;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 public class URIBasics {
 
@@ -8,6 +11,15 @@ public class URIBasics {
 
         URI timsSite=URI.create("https://learnprogramming.academy/courses/complete-java-masterclass");
         print(timsSite);
+
+        try {
+            URI uri = new URI("http://user:pw@store.com:5000/products/phones?os=android#samsung");
+            print(uri);
+            URL url =uri.toURL();
+            System.out.println(url);
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void print(URI uri){
