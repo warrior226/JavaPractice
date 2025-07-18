@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -31,9 +32,16 @@ public class ASyncClientGet {
             HttpResponse<Stream<String>> response;
             CompletableFuture<HttpResponse<Stream<String>>> responseFuture = httpClient.sendAsync(request,HttpResponse.BodyHandlers.ofLines()); //Block until it receives a response
 
-            while(!responseFuture.isDone()){
-                System.out.print(".");
-                TimeUnit.SECONDS.sleep(1);
+            while(true){
+                try{
+                    response=responseFuture.get(1,TimeUnit.SECONDS);
+                    if(response!=null)break;
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                } catch (TimeoutException e) {
+                    System.out.print(".");
+                }
+
             }
             System.out.println();
             response=responseFuture.join(); //Join is the same as get() but it runs without throwing a checked exception
