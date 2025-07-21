@@ -1,0 +1,51 @@
+{
+    "order":
+        {
+            "orderId":"0000000001",
+            "product":"bananas",
+            "amount":750,
+            "orderReceived":"2025-07-21T16:43:04.0257522",
+            "orderDeliveryDate":"2025-07-24"
+        }
+}
+{
+    "order":
+        {
+            "orderId":"0000000004",
+            "product":"apples",
+            "amount":500,
+            "orderReceived":"2025-07-21T16:43:04.1025432",
+            "orderDeliveryDate":"2025-07-24"
+        }
+}
+{
+    "order":
+        {
+            "orderId":"0000000003",
+            "product":"cantaloupes",
+            "amount":100,
+            "orderReceived":"2025-07-21T16:43:04.1015513",
+            "orderDeliveryDate":"2025-07-24"
+        }
+}
+{
+    "order":
+        {
+            "orderId":"0000000005",
+            "product":"oranges",
+            "amount":1000,
+            "orderReceived":"2025-07-21T16:43:04.1045379",
+            "orderDeliveryDate":"2025-07-24"
+        }
+}
+{
+    "order":
+        {
+            "orderId":"0000000002",
+            "product":"carrots",
+            "amount":2000,
+            "orderReceived":"2025-07-21T16:43:04.0985542",
+            "orderDeliveryDate":"2025-07-24"
+        }
+}
+
